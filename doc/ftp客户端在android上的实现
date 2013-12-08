@@ -1,0 +1,591 @@
+ftp 客户端在Android上的实现
+
+Android中FTP服务器、客户端搭建以及SwiFTP、ftp4j介绍
+分类： Andoird技巧拾取 2013-01-28 17:55 4481人阅读 评论(5) 收藏 举报
+
+目录(?)[+]
+
+ 
+
+
+
+        最近一段时间，因为公司项目的需要，对HTTP协议以及FTP协议都有所了解，并且在基于网络开放源代码
+
+  基础上，能够完成项目的要求。今天给大家分享下，怎样建立属于我们自己的FTP服务器以及FPT客户端，同时
+
+  非常非常感谢这些开源软件及其作者为IT行业做出的贡献，最大程度上至少解放了我们这些IT码农。且看正文。
+
+
+       本文主要内容：
+
+                1、FTP服务端部署---- 基于Android中SwiFTP开源软件介绍；
+
+                2、FTP客户端部署 --- 基于ftp4j开源jar包的客户端开发 ；
+
+                3、使用步骤 --- 如何测试我们搭建的FTP可操作性。
+
+ 
+
+       本文所涉及到的知识、文档、源代码照旧会在文章末尾列出。欢迎大家一起学习。
+
+ 
+
+
+一、 FTP服务端部署
+
+          SwiFTP开源软件是为Android系统开发，也就是说我们可以将其源代码嵌入到我们的项目中。当然，对其进行
+
+  一定改造还是必不可少的。这儿只是从感官上对SwiFTP的运行效果图进行一下说面，以便帮助大家有初步认识：
+
+         SwiFTP 资料信息：
+
+                        Google Download 介绍 ： http://code.google.com/p/swiftp/downloads/list
+
+                                      GitHub 介绍 ：        https://github.com/ppareit/swiftp
+
+                 
+
+
+                                                                                        
+
+                                                                Android版本SwiFTP截图                                           
+
+ 
+
+         界面其实很简单，但是从设计角度分析，SwiFTP框架系统还是值得我们研究的，当然如果你想改造成
+
+  属于自己的FTP服务器(一般就是改改用户名、密码、PWD(起始工作目录))等，那更得花时间去钻研了。 
+
+ 
+
+
+ 二、 FTP客户端部署
+
+    接下来，重点介绍我们的主角ftp4j开源jar包，该jar包就是开发我们FTP客户端核心了。
+
+       ftp4j官网地址：http://www.sauronsoftware.it/projects/ftp4j/。对比与AndroidSDK而言，也就是ftp4j
+
+   SDK了，一切的一切(文档、源代码、示例)都可以在官网查询 。想要了解的同学，至少得保证把首页给整明白吧。
+
+ 
+  1、ftp4j概要
+
+      官网描述如下:
+
+           The ftp4j libraryimplementsa Java full-features FTP client. With ftp4j embedded in  your 
+
+    application you  can :  FTP site (directory listing included), create, delete, transfer files
+
+   (upload and download) , browse the remote FTP site (directory listing included), create, delete,
+
+   rename and move remote directories and files.
+
+ 
+
+   关于FTP连接主要有如下几种方式：
+
+       The ftp4j library can connect the remote FTP server:
+
+               · Througha direct TCP/IPconnection.        一般就是直接连接了。
+
+               · Througha FTP proxy.                                    FTP代理
+
+               · Tunnelling through a HTTPproxy.                 HTTP代理
+
+               ·  Througha SOCKS 4/4aproxy.                    
+
+               · Througha SOCKS 5 proxy.
+
+               ·  You can add support to otherproxies plugging your own connector, since the ftp4jconnection manager
+
+              architecture is modular.
+
+ 
+ 2、主要类简介
+
+      下面根据官网的描述，将该ftp4j库的主要类简单说明下：
+
+
+   FTPClient类
+
+           该类封装了对FTPCommand的请求操作。例如：连接FTP服务器、进行各种各样的FTP操作(上传、下载、
+
+     删除、重命名文件  等)。基本使用流程图如下：
+
+                                                     
+
+          利用伪代码描述如下：
+
+[java] view plaincopyprint?
+
+    //1、登录至FTPp服务器  
+    mFTPClient.connect(mFTPHost, mFTPPort);  
+    //2、请求授权  
+    mFTPClient.login(mFTPUser, mFTPPassword);  
+    //3、各种FTP操作  
+    mFTPClient.upload();  
+    mFTPClient.download();  
+    //4、断开FTP连接  
+    mFTPClient.disconnect();  
+
+                   
+
+     主要方法：
+
+    public java.lang.String [] connect(java.lang.String host,    int port)   throws java.lang.IllegalStateException,
+
+                                           java.io.IOException ,   FTPIllegalReplyException ,   FTPException
+
+        功能：与FTP服务器主机建立连接 .
+
+        参数 ：
+
+              host -   FTP服务器的主机名(host name) 或者 ip地址
+
+              port -   FTP服务器的监听端口
+
+       返回值 : The server welcome message ，FTP服务器响应消息
+
+       抛出异常类型 ：   (略，参见后文)
+
+ 
+
+  public void login(java.lang.String username , java.lang.String password)   
+
+                                         throws    java.lang.IllegalStateException,
+
+                                                        java.io.IOException,  FTPIllegalReplyException,   FTPException
+
+       功能：根据用户名以及密码登录FTP服务器
+
+       参数：
+
+             username – 登录FTP服务器的用户名.
+
+             password - 登录FTP服务器的 密码
+
+       返回值：(无)
+
+       抛出异常类型  ： (略，参见后文)
+
+ 
+
+   public java.lang.String currentDirectory()    throws java.lang.IllegalStateException,   java.io.IOException,
+
+                                                       FTPIllegalReplyException,    FTPException
+
+       功能 ：获取FTP服务器当前工作目录。
+
+       返回值：FTP服务器当前工作目录
+
+       抛出异常类型 ： (略，参见后文)
+
+ 
+
+  public long fileSize(java.lang.String path)
+
+       功能：获取指定文件的大小。
+
+       参数：
+
+            path -- 指定文件所在的路径，可以是相对路径或者是绝对路径。
+
+       返回值 ： 指定文件的大小，单位为byte.
+
+       抛出异常类型 :   (略，参见后文)
+
+ 
+
+  public void deleteFile(java.lang.String path)  throws  java.lang.IllegalStateException,    java.io.IOException,
+
+                                                         FTPIllegalReplyException,   FTPException
+
+      功能：删除指定文件
+
+      参数：
+
+           path -- 指定文件所在的路径，可以使相对路径或者是绝对路径。
+
+      返回值：(无)
+
+      抛出异常类型 :   (略，参见后文)
+
+ 
+
+   public void deleteDirectory(java.lang.String path)   throws java.lang.IllegalStateException,  
+
+                                                         java.io.IOException,  FTPIllegalReplyException,   FTPException
+
+      功能： 删除指定文件夹
+
+      参数： 
+
+          path -- 指定文件所在的路径，可以使相对路径或者是绝对路径。
+
+      返回值：(无)
+
+      抛出异常类型 ：  (略，参见后文)
+
+ 
+
+   public  FTPFile[] list()     throws java.lang.IllegalStateException ,  java.io.IOException,
+
+      功能： 获取当前工作目录所有文件信息：文件名、文件大小、文件类型(文件或者文件夹)。
+
+      返回值： FTPFile[]数组对象 ---- 该文件夹所对应的信息
+
+      抛出异常类型 ： (略，参见后文)
+
+
+   public java.lang.String[] listNames()
+
+      功能： 获取当前工作目录的所有文件名。
+
+      返回值：String[]类型 ----- 所有文件名
+
+      抛出异常类型 ： (略，参见后文)
+
+
+  public void upload(java.io.File file ,  FTPDataTransferListener listener)  throws java.lang.IllegalStateException,
+
+                      java.io.FileNotFoundException,   java.io.IOException,    FTPIllegalReplyException,   FTPException,
+
+                      FTPDataTransferException,  FTPAbortedException
+
+ 
+
+      功能 ：上传文件至FTP服务器。该操作会阻塞当前线程，阻塞会在操作完成后解除。该方法可以通过调用
+
+   abortCurrentDataTransfer()方法去中断。默认上传的文件目录是当前工作目录，通过currentDirectory()方法
+
+   可以获得。注意：不支持上传文件夹。
+
+     参数：file  -- 上传文件的File对象
+
+              listener -- 监听器 (稍后介绍)
+
+     抛出异常类型 : (略，参见后文)
+
+ 
+
+  public void download(java.lang.String remoteFileName,    java.io.File localFile, 
+
+                FTPDataTransferListener listener)
+
+                                       throws java.lang.IllegalStateException,  java.io.FileNotFoundException,
+
+                                                    java.io.IOException,   FTPIllegalReplyException,   FTPException,
+
+                                                    FTPDataTransferException,  FTPAbortedException
+
+       功能：下载某个文件值指定路径。该操作会阻塞当前线程，阻塞会在操作完成后解除。该方法可以通过调用
+
+   abortCurrentDataTransfer()方法去中断。注意：不支持下载文件夹。
+
+       参数:
+
+            remoteFileName -  相对路径(相对于当前目录)时则是文件名或者绝对路径(例如：Linux中以”\”为前缀)
+
+            localFile -  本地存放文件的File对象。
+
+            listener -  监听器 (稍后介绍)
+
+       抛出异常类型 ： (略，参见后文)
+
+
+   public void abortCurrentDataTransfer(boolean sendAborCommand)  throws java.io.IOException,  
+
+                                                    FTPIllegalReplyException
+
+      功能：如果存在任何正在进行的文件操作(上传/下载)，该方法会中断它
+
+      参数
+
+         sendAborCommand --  true则代表中断文件操作，并且发送ABORT 命令给FTP服务器
+
+                                          false 代表关闭中断文件操作，将不会发送任何消息给FTP服务器。
+
+       抛出异常类型 ： (略，参见后文)
+
+ 
+  FTPFile 类
+
+              该类封装了FTP服务器中文件的信息，即Model类。
+
+ 
+
+     常量字段：   
+
+                                                                                   文件对应类型
+
+            public static final intTYPE_FILE                         文件
+
+            public static final intTYPE_DIRECTORY            文件夹
+
+            public static final intTYPE_LINK                       文件引用
+
+ 
+
+    主要方法：
+
+           public java.util.Date getModifiedDate()     获取文件最后修改日期。
+
+           public int getType()                                  获取文件类型。
+
+           public long getSize()                                 获取文件大小  ，单位为byte。
+
+ 
+  FTPDataTransferListener   Interface 
+
+        该接口约定了文件传输过程中的回调方法类型。我们可以实现该类去监听每个具体的文件操作过程。
+
+  回调接口有：
+
+           void started()            回调方法，表示已开始文件传输。
+
+           void completed()        回调方法，表示文件传输已完成。
+
+            void aborted()           回调方法，表示文件传输已被中断，可由abortCurrentDataTransfer()触发。
+
+            void failed()              回调方法，表示文件传输由于某种错误而失败。
+
+            void transferred(int length)  回调方法，表示本次回调过程中已下载/上传的文件字节大小。
+
+               参数：  length --本次回调过程中下载/上传的文件字节大小。
+
+               PS ：我们可以累积length大小，以便获得当前文件已传输的字节数。
+
+ 
+
+ 异常种类：
+
+            ftp4j的自定义共有如下几种，基本上每个FTP操作，都伴随着这些异常，因此，我们需要捕获这些异常信息。
+
+ 
+   FTPAbortedException
+
+         当文件传输过程被显示中断(例如，调用abortCurrentDataTransfer()方法)时，抛出该异常。
+   FTPDataTransferException
+
+         在文件传输过程中，发生任何I/O(例如,无法创建文件流)错误，都会抛出该异常。
+   FTPException
+
+         封装了FTP错误码以及错误消息的异常类。PS：类似于HTTP错误码以及错误消息
+
+          常用方法：
+
+            public int getCode()                    获取异常发生时，FTP的错误码(错误码字段值具体可见FTPCodes类)
+
+            public java.lang.String getMessage()  获取异常发生时，FTP的错误消息。
+
+
+   FTPIllegalReplyException
+
+             当FTP服务器以一种非正常的方式---违反了FTP协议的规则响应时，抛出该异常。
+   FTPListParseException
+
+             通过list()方法请求FTP服务时，如果此时FTP服务器的返回的消息不能被正确的解析时，都会抛出该异常。
+
+
+
+       通过对这些相关知识的学习，足矣利用ftp4j jar包完成我们简易却又充实的专属我们自己的FTP客户端了。
+
+   接下来，便开始我们的FTP客户端的开发。
+
+ 
+   3、FTP客户端开发
+
+       在功能需求上，开发一个FTP客户端和开发一个文件选择器甚至文件管理器基本上没有任何区别，唯一的区别
+
+  只在于数据来源不同，这个不同会导致功能实践上更多细节的差异，例如：异常的捕获、断点尝试等。代码方面
+
+  我就不再赘述了，对前面所介绍类的掌握和理解，应该No Problem了。主要说一下两点：
+
+         ①、由于Android4.0不允许在主线程上进行网络操作，例如：Socket编程，我们的操作必须放在新的线程中。
+
+    同时为了减少创建线程的开销，我们试用了线程池去执行每一个FTP操作。
+
+         ②、试用FTPClient时，不允许上传/下载文件夹，我也没有针对这一方面进行更多的开发(具体实现过程大致
+
+    为：对文件夹里的每个文件皆进行上传/下载操作)，有兴趣的同学可以看看这篇帖子<基于ftp4j的FTP客户端工具>，
+
+   会提升对你对ftp4j的使用认知的。
+
+ 
+
+      我们的FTP客户端主要功能为：
+
+          ①、显示特定目录列表;
+
+          ②、删除文件以及文件夹，下载文件;
+
+          ③、上传文件。
+
+ 
+
+     主要代码如下：
+
+[java] view plaincopyprint?
+
+    /** 
+     *  
+     * @author jun.qin 
+     * {@link} http://blog.csdn.net/qinjuning 
+     * 
+     */  
+    public class FtpMainActivity extends Activity implements OnClickListener {  
+      
+        private static String TAG = CopyOfFtpMainActivity.class.getName();  
+      
+        private CmdFactory mCmdFactory;  
+        private FTPClient mFTPClient;  
+        private ExecutorService mThreadPool;  
+          
+        @Override  
+        protected void onDestroy() {  
+            mDameonRunning = false ;  
+            Thread thread = new Thread(mCmdFactory.createCmdDisConnect()) ;  
+            thread.start();  
+            //等待连接中断  
+            try {  
+                thread.join(2000);  
+            } catch (InterruptedException e) {  
+                // TODO Auto-generated catch block  
+                e.printStackTrace();  
+            }  
+            mThreadPool.shutdownNow();  
+            super.onDestroy();  
+        }  
+        //put线程池中执行  
+        private void executeConnectRequest() {  
+            mThreadPool.execute(mCmdFactory.createCmdConnect());  
+        }  
+      
+        private void executeDisConnectRequest() {  
+            mThreadPool.execute(mCmdFactory.createCmdDisConnect());  
+        }  
+      
+        private void executePWDRequest() {  
+            mThreadPool.execute(mCmdFactory.createCmdPWD());  
+        }  
+      
+        private void executeLISTRequest() {  
+            mThreadPool.execute(mCmdFactory.createCmdLIST());  
+        }  
+        //创建FtpCmd的工厂类  
+        public class CmdFactory {  
+      
+            public FtpCmd createCmdConnect() {  
+                return new CmdConnect();  
+            }  
+      
+            public FtpCmd createCmdDisConnect() {  
+                return new CmdDisConnect();  
+            }  
+      
+        }  
+        //继承了Runnable接口  
+        public abstract class FtpCmd implements Runnable {  
+      
+            public abstract void run();  
+      
+        }  
+        //连接命令  
+        public class CmdConnect extends FtpCmd {  
+            @Override  
+            public void run() {  
+                boolean errorAndRetry = false ;  //根据不同的异常类型，是否重新捕获  
+                try {  
+                    String[] welcome = mFTPClient.connect(mFTPHost, mFTPPort);  
+                    if (welcome != null) {  
+                        for (String value : welcome) {  
+                            logv("connect " + value);  
+                        }  
+                    }  
+                    mFTPClient.login(mFTPUser, mFTPPassword);  
+                    mHandler.sendEmptyMessage(MSG_CMD_CONNECT_OK);  
+                }catch (IllegalStateException illegalEx) {  
+                    illegalEx.printStackTrace();  
+                    errorAndRetry = true ;  
+                }catch (IOException ex) {  
+                    ex.printStackTrace();  
+                    errorAndRetry = true ;  
+                }catch (FTPIllegalReplyException e) {  
+                    e.printStackTrace();  
+                }catch (FTPException e) {  
+                    e.printStackTrace();  
+                    errorAndRetry = true ;  
+                }  
+                if(errorAndRetry && mDameonRunning){  
+                    mHandler.sendEmptyMessageDelayed(MSG_CMD_CONNECT_FAILED, 2000);  
+                }  
+            }  
+        }  
+      
+        public class CmdDisConnect extends FtpCmd {  
+      
+            @Override  
+            public void run() {  
+                if (mFTPClient != null) {  
+                    try {  
+                        mFTPClient.disconnect(true);  
+                    } catch (Exception ex) {  
+                        ex.printStackTrace();  
+                    }  
+                }  
+            }  
+        }  
+        //下载命令  
+        public class CmdDownLoad extends AsyncTask<Void, Integer, Boolean> {  
+      
+            @Override  
+            protected Boolean doInBackground(Void... params) {  
+                try {  
+                    String localPath = getParentRootPath() + File.separator  
+                            + mFileList.get(mSelectedPosistion).getName();  
+                    mFTPClient.download(  
+                            mFileList.get(mSelectedPosistion).getName(),  
+                            new File(localPath),  
+                            new DownloadFTPDataTransferListener(mFileList.get(  
+                                    mSelectedPosistion).getSize()));  
+                } catch (Exception ex) {  
+                    ex.printStackTrace();  
+                    return false;  
+                }  
+      
+                return true;  
+            }  
+      
+            protected void onPostExecute(Boolean result) {  
+                toast(result ? "下载成功" : "下载失败");  
+                progressDialog.dismiss();  
+            }  
+        }  
+    }  
+
+
+
+三，使用方法说明
+
+      前提条件， 确保两台手机分别安装FTP服务端，FTP客户端 ，并且能连接上WIFI网络。
+
+   
+
+    第一步：运行FTP服务器SwiFtp，输入基本信息(端口、用户名、密码)，同时确保FTP服务器成功开启 。如图：
+
+                                                           
+
+                         配置FTP服务器信息                                                                                       FTP服务器状态
+
+
+    第二步：运行FTP客户端，填写FTP验证时的资料(即第一步输入信息)后，连接FTP服务器即可。如图：
+
+
+                                                                                            
+
+
+
+      最后，本文所涉及到的所有资料以及文章中示例的源代码的下载地址为：
+
+
+                          http://download.csdn.net/detail/qinjuning/5034873
